@@ -1,4 +1,8 @@
 --!optimize 2
+--[[
+This is pretty much just GoodSignal but with a doubly-linked list and a special handler for :Wait()
+--]]
+
 export type Connection<T...> = {
 	Connected: boolean,
 	Disconnect: (self: Connection<T...>) -> (),
@@ -19,8 +23,6 @@ export type Signal<T...> = {
 
 local spawn = task.spawn -- or task.defer
 
-local spawn, running, yield = task.spawn, coroutine.running, coroutine.yield
-
 local thread = nil
 
 local signal = {}
@@ -38,7 +40,7 @@ end
 
 local function spawner()
 	while true do
-		call(yield())
+		call(coroutine.yield())
 	end
 end
 
@@ -55,7 +57,7 @@ end
 
 function signal.new<T...>(): Signal<T...>
 	--why does setting them to false at the start slightly faster than not assigning it at start
-	return setmetatable({ next = false, waiting = false }, signal)
+	return setmetatable({ next = false, waiting = false }, signal) :: any
 end
 
 function signal:Connect<T...>(fn: (T...) -> ()): Connection<T...>
@@ -72,15 +74,14 @@ end
 function signal:Fire<T...>(...: T...)
 	local n = self.next :: Connection<T...>
 	while n do
-		local fn = n.fn
-		n = n.next
-
 		if not thread then
 			thread = coroutine.create(spawner)
 			coroutine.resume(thread)
 		end
 
-		spawn(thread, fn, ...)
+		--cannot unify variadic and generic packs??
+		spawn(thread, n.fn, ...)
+		n = n.next
 	end
 
 	if self.waiting then
@@ -96,10 +97,10 @@ end
 function signal:Once<T...>(fn: (T...) -> ())
 	local conn
 	conn = self:Connect(function(...)
-		fn(...)
 		if conn.Connected then
 			conn:Disconnect()
 		end
+		fn(...)
 	end)
 
 	return conn
@@ -112,8 +113,8 @@ signal.Destroy = signal.DisconnectAll
 
 function signal:Wait<T...>(): T...
 	self.waiting = self.waiting or {}
-	self.waiting[#self.waiting + 1] = running()
-	return yield()
+	table.insert(self.waiting, coroutine.running())
+	return coroutine.yield()
 end
 
 table.freeze(signal)
