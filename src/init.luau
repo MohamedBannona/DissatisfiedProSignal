@@ -21,6 +21,8 @@ export type Signal<T...> = {
 	Destroy: (self: Signal<T...>) -> (),
 }
 
+local task = task or require("@lune/task")
+
 local spawn = task.spawn -- or task.defer
 
 local thread = nil
@@ -62,13 +64,13 @@ end
 
 function signal:Connect<T...>(fn: (T...) -> ()): Connection<T...>
 	local next = self.next
-	local connection = setmetatable({ fn = fn, next = next, prev = self, Connected = true }, connection)
+	local conn = setmetatable({ fn = fn, next = next, prev = self, Connected = true }, connection)
 
 	if next then
-		next.prev = connection
+		next.prev = conn
 	end
-	self.next = connection
-	return connection
+	self.next = conn
+	return conn
 end
 
 function signal:Fire<T...>(...: T...)
@@ -89,7 +91,7 @@ function signal:Fire<T...>(...: T...)
 		self.waiting = false
 
 		for i = 1, #waiting do
-			coroutine.resume(waiting[i], ...)
+			spawn(waiting[i], ...)
 		end
 	end
 end

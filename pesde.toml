@@ -7,26 +7,21 @@ license = "CC0-1.0"
 
 includes = [
 	"pesde.toml",
-    "src",
     "src/**",
 ]
 
 [target]
 environment = "roblox"
-lib = "src"
+lib = "src/init.luau"
 build_files = ["src"]
 
 [indices]
 default = "https://github.com/pesde-pkg/index"
 
 [scripts]
-argon_sync_config_generator = ".pesde/scripts/argon_sync_config_generator.luau"
-argon_sourcemap_generator = ".pesde/scripts/argon_sourcemap_generator.luau"
-
-rojo_sync_config_generator = ".pesde/scripts/rojo_sync_config_generator.luau"
-rojo_sourcemap_generator = ".pesde/scripts/rojo_sourcemap_generator.luau"
+roblox_sync_config_generator = ".pesde/scripts/roblox_sync_config_generator.luau"
+sourcemap_generator = ".pesde/scripts/sourcemap_generator.luau"
 
 [dev_dependencies]
 scripts = { name = "pesde/scripts_rojo", version = "^0.1.0", target = "lune" }
 rojo = { name = "pesde/rojo", version = "^7.4.4", target = "lune" }
-argon = { name = "pesde/argon", version = "^2.0.23", target = "lune" }
